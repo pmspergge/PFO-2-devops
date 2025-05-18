@@ -1,0 +1,47 @@
+version: '3.8'
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+
+services:
+  mysql-db:
+    image: mysql:latest
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: '1234'
+      MYSQL_DATABASE: 'actividad_docker'
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin","ping","-h","localhost","-p1234"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+
+  web-server:
+    image: nginx:latest
+    container_name: web-server
+    ports:
+      - "8080:80"
+    networks:
+      - app-network
+
+  web-app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: web-app
+    ports:
+      - "3000:3000"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - app-network
+
